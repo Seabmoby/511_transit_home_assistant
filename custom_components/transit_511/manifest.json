@@ -1,0 +1,12 @@
+{
+  "domain": "transit_511",
+  "name": "511 Transit",
+  "codeowners": [],
+  "config_flow": true,
+  "dependencies": [],
+  "documentation": "https://github.com/yourusername/transit_511",
+  "integration_type": "service",
+  "iot_class": "cloud_polling",
+  "requirements": [],
+  "version": "1.5.1"
+}

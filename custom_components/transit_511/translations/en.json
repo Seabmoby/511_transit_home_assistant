@@ -1,0 +1,77 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "511 Transit API Setup",
+        "description": "Enter your 511.org API key to get started. You can obtain a free API key from https://511.org/open-data/token\n\nNote: Your API key will be saved and automatically reused when you add more stops or vehicles.",
+        "data": {
+          "api_key": "API Key"
+        }
+      },
+      "monitoring_type": {
+        "title": "Select Monitoring Type",
+        "description": "Choose the type of monitoring you want to set up. You can add this integration multiple times to monitor multiple stops and vehicles.",
+        "data": {
+          "monitoring_type": "Monitoring Type"
+        },
+        "data_description": {
+          "monitoring_type": "To add both stop and vehicle monitoring, complete this setup and then add the integration again."
+        }
+      },
+      "stop_monitoring": {
+        "title": "Stop Monitoring Configuration",
+        "description": "Configure stop monitoring to track arrival and departure times at a specific transit stop.",
+        "data": {
+          "operator": "Transit Operator/Agency",
+          "stop_code": "Stop Code",
+          "line_id": "Line/Route ID (optional)"
+        },
+        "data_description": {
+          "operator": "Select the transit operator or agency (e.g., SF for Muni, BA for BART)",
+          "stop_code": "Enter the stop code (e.g., 18031)",
+          "line_id": "Optionally filter by a specific line or route"
+        }
+      },
+      "vehicle_monitoring": {
+        "title": "Vehicle Monitoring Configuration",
+        "description": "Configure vehicle monitoring to track the GPS location of a specific vehicle.",
+        "data": {
+          "operator": "Transit Operator/Agency",
+          "vehicle_id": "Vehicle ID"
+        },
+        "data_description": {
+          "operator": "Select the transit operator or agency",
+          "vehicle_id": "Enter the vehicle ID to track"
+        }
+      }
+    },
+    "error": {
+      "auth_failed": "Authentication failed. Please check your API key.",
+      "cannot_connect": "Unable to connect to the 511 API. Please check your internet connection and try again.",
+      "rate_limit": "API rate limit exceeded. Please wait and try again later.",
+      "invalid_operator": "Invalid operator ID. Please select a valid transit operator.",
+      "invalid_stop": "Invalid stop code. Please check the stop code and try again.",
+      "invalid_vehicle": "Invalid vehicle ID. Please check the vehicle ID and try again.",
+      "unknown": "An unexpected error occurred. Please try again."
+    },
+    "abort": {
+      "already_configured": "This stop or vehicle is already configured."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "511 Transit Options",
+        "description": "Configure options for this 511 Transit integration.",
+        "data": {
+          "scan_interval": "Update Interval (seconds)",
+          "enabled_entities": "Enabled Entity Types"
+        },
+        "data_description": {
+          "scan_interval": "How often to fetch new data from the API (30-300 seconds). Be mindful of the 60 requests/hour rate limit.",
+          "enabled_entities": "Select which entity types to create for this stop"
+        }
+      }
+    }
+  }
+}
