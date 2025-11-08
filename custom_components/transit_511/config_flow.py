@@ -11,6 +11,7 @@ from homeassistant.const import CONF_SCAN_INTERVAL
 from homeassistant.core import callback
 from homeassistant.data_entry_flow import FlowResult
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
+from homeassistant.helpers import selector
 
 from .api import (
     Transit511ApiClient,
@@ -438,8 +439,45 @@ class Transit511OptionsFlow(config_entries.OptionsFlow):
         self, user_input: dict[str, Any] | None = None
     ) -> FlowResult:
         """Manage the options."""
+        errors: dict[str, str] = {}
+
         if user_input is not None:
-            return self.async_create_entry(title="", data=user_input)
+            # If API key was provided, validate it and update config entry data
+            if CONF_API_KEY in user_input and user_input[CONF_API_KEY]:
+                new_api_key = user_input[CONF_API_KEY]
+
+                # Validate the new API key
+                session = async_get_clientsession(self.hass)
+                client = Transit511ApiClient(new_api_key, session)
+
+                try:
+                    await client.validate_api_key()
+                except Transit511AuthError:
+                    errors["base"] = ERROR_AUTH_FAILED
+                except Transit511RateLimitError:
+                    errors["base"] = ERROR_RATE_LIMIT
+                except Transit511ApiError:
+                    errors["base"] = ERROR_CANNOT_CONNECT
+                except Exception:  # pylint: disable=broad-except
+                    _LOGGER.exception("Unexpected exception validating API key")
+                    errors["base"] = ERROR_UNKNOWN
+
+                if not errors:
+                    # Update the config entry data with new API key
+                    new_data = dict(self.config_entry.data)
+                    new_data[CONF_API_KEY] = new_api_key
+                    self.hass.config_entries.async_update_entry(
+                        self.config_entry,
+                        data=new_data,
+                    )
+                    _LOGGER.info("API key updated for config entry: %s", self.config_entry.title)
+
+                    # Remove API key from options before saving
+                    options_data = {k: v for k, v in user_input.items() if k != CONF_API_KEY}
+                    return self.async_create_entry(title="", data=options_data)
+
+            if not errors:
+                return self.async_create_entry(title="", data=user_input)
 
         monitoring_type = self.config_entry.data.get(CONF_MONITORING_TYPE)
 
@@ -455,6 +493,15 @@ class Transit511OptionsFlow(config_entries.OptionsFlow):
 
             schema = vol.Schema(
                 {
+                    vol.Optional(
+                        CONF_API_KEY,
+                        description={"suggested_value": ""},
+                    ): selector.TextSelector(
+                        selector.TextSelectorConfig(
+                            type=selector.TextSelectorType.PASSWORD,
+                            autocomplete="off",
+                        ),
+                    ),
                     vol.Optional(
                         CONF_SCAN_INTERVAL,
                         default=self.config_entry.options.get(
@@ -473,9 +520,18 @@ class Transit511OptionsFlow(config_entries.OptionsFlow):
                 }
             )
         else:
-            # Vehicle monitoring - just scan interval
+            # Vehicle monitoring - just scan interval and API key
             schema = vol.Schema(
                 {
+                    vol.Optional(
+                        CONF_API_KEY,
+                        description={"suggested_value": ""},
+                    ): selector.TextSelector(
+                        selector.TextSelectorConfig(
+                            type=selector.TextSelectorType.PASSWORD,
+                            autocomplete="off",
+                        ),
+                    ),
                     vol.Optional(
                         CONF_SCAN_INTERVAL,
                         default=self.config_entry.options.get(
@@ -488,7 +544,7 @@ class Transit511OptionsFlow(config_entries.OptionsFlow):
                 }
             )
 
-        return self.async_show_form(step_id="init", data_schema=schema)
+        return self.async_show_form(step_id="init", data_schema=schema, errors=errors)
 
 
 # Import for multi_select

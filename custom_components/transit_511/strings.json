@@ -64,14 +64,22 @@
         "title": "511 Transit Options",
         "description": "Configure options for this 511 Transit integration.",
         "data": {
+          "api_key": "API Key (leave blank to keep current)",
           "scan_interval": "Update Interval (seconds)",
           "enabled_entities": "Enabled Entity Types"
         },
         "data_description": {
+          "api_key": "Update your 511.org API key. Leave blank to keep your existing API key. Changes will be validated before saving.",
           "scan_interval": "How often to fetch new data from the API (30-300 seconds). Be mindful of the 60 requests/hour rate limit.",
           "enabled_entities": "Select which entity types to create for this stop"
         }
       }
+    },
+    "error": {
+      "auth_failed": "Authentication failed. Please check your API key.",
+      "cannot_connect": "Unable to connect to the 511 API. Please check your internet connection and try again.",
+      "rate_limit": "API rate limit exceeded. Please wait and try again later.",
+      "unknown": "An unexpected error occurred. Please try again."
     }
   }
 }
