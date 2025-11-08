@@ -481,6 +481,9 @@ class Transit511OptionsFlow(config_entries.OptionsFlow):
 
         monitoring_type = self.config_entry.data.get(CONF_MONITORING_TYPE)
 
+        # Get current API key
+        current_api_key = self.config_entry.data.get(CONF_API_KEY, "")
+
         if monitoring_type == MONITORING_TYPE_STOP:
             # Build entity selection options
             entity_options = {}
@@ -493,15 +496,6 @@ class Transit511OptionsFlow(config_entries.OptionsFlow):
 
             schema = vol.Schema(
                 {
-                    vol.Optional(
-                        CONF_API_KEY,
-                        description={"suggested_value": ""},
-                    ): selector.TextSelector(
-                        selector.TextSelectorConfig(
-                            type=selector.TextSelectorType.PASSWORD,
-                            autocomplete="off",
-                        ),
-                    ),
                     vol.Optional(
                         CONF_SCAN_INTERVAL,
                         default=self.config_entry.options.get(
@@ -517,21 +511,21 @@ class Transit511OptionsFlow(config_entries.OptionsFlow):
                             CONF_ENABLED_ENTITIES, DEFAULT_ENABLED_ENTITIES
                         ),
                     ): cv.multi_select(entity_options),
-                }
-            )
-        else:
-            # Vehicle monitoring - just scan interval and API key
-            schema = vol.Schema(
-                {
                     vol.Optional(
                         CONF_API_KEY,
-                        description={"suggested_value": ""},
+                        description={"suggested_value": current_api_key},
                     ): selector.TextSelector(
                         selector.TextSelectorConfig(
                             type=selector.TextSelectorType.PASSWORD,
                             autocomplete="off",
                         ),
                     ),
+                }
+            )
+        else:
+            # Vehicle monitoring - just scan interval and API key
+            schema = vol.Schema(
+                {
                     vol.Optional(
                         CONF_SCAN_INTERVAL,
                         default=self.config_entry.options.get(
@@ -540,6 +534,15 @@ class Transit511OptionsFlow(config_entries.OptionsFlow):
                     ): vol.All(
                         vol.Coerce(int),
                         vol.Range(min=MIN_SCAN_INTERVAL, max=MAX_SCAN_INTERVAL),
+                    ),
+                    vol.Optional(
+                        CONF_API_KEY,
+                        description={"suggested_value": current_api_key},
+                    ): selector.TextSelector(
+                        selector.TextSelectorConfig(
+                            type=selector.TextSelectorType.PASSWORD,
+                            autocomplete="off",
+                        ),
                     ),
                 }
             )
