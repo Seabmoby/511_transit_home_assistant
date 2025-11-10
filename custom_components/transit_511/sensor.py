@@ -73,20 +73,26 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up 511 Transit sensors from a config entry."""
+    _LOGGER.info("Setting up sensors for entry: %s", entry.title)
+
     # Only set up sensors for stop monitoring
     if entry.data.get(CONF_MONITORING_TYPE) != MONITORING_TYPE_STOP:
+        _LOGGER.info("Skipping sensor setup - not stop monitoring")
         return
 
     # Get all coordinators for this entry
-    entry_data = hass.data[DOMAIN][entry.entry_id]
+    entry_data = hass.data[DOMAIN].get(entry.entry_id, {})
+    _LOGGER.info("Found %d coordinators for entry", len(entry_data))
 
     # Get enabled entities from options (default to common entities if not set)
     enabled_entities = entry.options.get(CONF_ENABLED_ENTITIES, DEFAULT_ENABLED_ENTITIES)
+    _LOGGER.info("Enabled entities: %s", enabled_entities)
 
     entities: list[SensorEntity | BinarySensorEntity] = []
 
     # Create sensors for each stop/device in this entry
     for device_id, coordinator in entry_data.items():
+        _LOGGER.info("Creating sensors for device: %s", device_id)
         # Create sensors based on enabled entities
         if ENTITY_TYPE_COUNT in enabled_entities:
             entities.append(Transit511CountSensor(coordinator, entry))
@@ -147,6 +153,7 @@ async def async_setup_entry(
         if ENTITY_TYPE_OB_NEXT_THREE in enabled_entities:
             entities.append(Transit511DirectionNextThreeSensor(coordinator, entry, DIRECTION_OUTBOUND))
 
+    _LOGGER.info("Adding %d sensor entities", len(entities))
     async_add_entities(entities)
 
 
