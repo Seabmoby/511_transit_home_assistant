@@ -44,16 +44,19 @@ class Transit511ApiClient:
         self,
         api_key: str,
         session: aiohttp.ClientSession,
+        enable_api_logging: bool = False,
     ) -> None:
         """Initialize the API client.
 
         Args:
             api_key: The 511 API key
             session: The aiohttp client session
+            enable_api_logging: Whether to log API calls
 
         """
         self._api_key = api_key
         self._session = session
+        self.enable_api_logging = enable_api_logging
 
     async def _make_request(
         self,
@@ -81,6 +84,14 @@ class Transit511ApiClient:
         request_params = {"api_key": self._api_key, "format": "JSON"}
         if params:
             request_params.update(params)
+
+        # Log API call with clear marker (if enabled)
+        if self.enable_api_logging:
+            _LOGGER.info(
+                "🚀 API CALL - Endpoint: %s | Params: %s",
+                endpoint,
+                {k: v for k, v in params.items() if k != "api_key"} if params else {}
+            )
 
         try:
             async with async_timeout.timeout(20):

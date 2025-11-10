@@ -2,6 +2,82 @@
 
 All notable changes to the 511 Transit integration will be documented in this file.
 
+## [2.0.0] - 2025-11-10
+
+### 🚨 BREAKING CHANGES
+
+**This is a major architectural restructuring. You must delete all existing integration entries and reconfigure.**
+
+### Changed
+
+- **New Service Architecture**: Integration entries are now organized by operator + monitoring type
+  - Before: 1 entry per stop/vehicle (e.g., "SF Stop 12345", "SF Stop 67890")
+  - After: 1 entry per operator+type (e.g., "SF Muni - Stops", "BART - Vehicles")
+  - Each entry can contain multiple stops or vehicles as separate devices
+
+- **Configuration Flow**:
+  - Create a service by selecting operator and monitoring type
+  - Start with empty service (no stops/vehicles)
+  - Add/remove stops/vehicles via Options menu
+  - Each stop/vehicle appears as its own device under the service
+
+- **Options Menu**:
+  - New menu-based options flow
+  - Add Stop/Vehicle: Add new device to this service
+  - Remove Stop/Vehicle: Remove device from service
+  - Settings: Configure scan interval, API logging, API key, enabled entities
+
+- **API Call Logging**:
+  - Added toggle to enable/disable detailed API call logging
+  - Off by default
+  - Shows 🚀 API calls, 🔄 coordinator updates, ✨ new coordinator creation, ♻️ coordinator reuse
+  - Configurable per service via Options → Settings
+
+### Benefits
+
+- **Better Organization**: All Muni stops grouped under one service, all BART stops under another
+- **Easier Management**: Add/remove stops without creating new integration entries
+- **Cleaner UI**: Fewer integration entries in Settings → Devices & Services
+- **Shared Settings**: Scan interval and options apply to all devices in a service
+
+### Migration Steps
+
+1. **Document your current setup**: Note all operators, stops, and vehicles you're monitoring
+2. **Delete all existing 511 Transit integration entries**
+3. **Add new services**:
+   - Add "SF Muni - Stops" (if you monitor Muni stops)
+   - Add "SF Muni - Vehicles" (if you monitor Muni vehicles)
+   - Add "BART - Stops" (if you monitor BART stops)
+   - Etc.
+4. **Configure each service**:
+   - Click Configure (or Options)
+   - Select "Add Stop" or "Add Vehicle"
+   - Enter stop code/vehicle ID
+   - Repeat for all your stops/vehicles
+5. **Update automations/dashboards**: Entity IDs remain similar but may have changed
+
+### Example
+
+**Before (v1.x)**:
+```
+Integration Entries:
+- "N Judah Train - Irving St & 5th Ave IB/OB"
+- "7 Haight-Noriega Bus - Lincoln Way & 5th Ave OB"
+- "BART - Embarcadero Station"
+```
+
+**After (v2.0)**:
+```
+Integration Entries:
+- "SF Muni - Stops"
+  ├── Device: "N Judah Train - Irving St & 5th Ave IB/OB"
+  └── Device: "7 Haight-Noriega Bus - Lincoln Way & 5th Ave OB"
+- "BART - Stops"
+  └── Device: "Embarcadero Station"
+```
+
+---
+
 ## [1.5.1] - 2025-11-05
 
 ### Fixed
@@ -176,14 +252,10 @@ All notable changes to the 511 Transit integration will be documented in this fi
 ## [1.1.1] - 2025-10-27
 
 ### Changed
-- 📝 **Icon Documentation**: Added `ICON_SETUP.md` explaining icon limitations for custom integrations
-- 🖼️ **Icon Files**: Added multiple icon formats (icon.png, logo.png, logo@2x.png)
-  - Note: Icons won't show in integration list (limitation of custom integrations)
-  - Entity icons (mdi:train, mdi:bus) work perfectly
+- 📝 **Documentation**: Improved documentation for custom integrations
 
 ### Technical
 - Removed unused `icon` field from manifest.json (not supported for custom integrations)
-- Icon files ready for future Home Assistant Brands submission if desired
 
 ---
 
@@ -194,7 +266,6 @@ All notable changes to the 511 Transit integration will be documented in this fi
   - All sensors grouped under their parent device
   - Device shows manufacturer (operator name) and model (stop/vehicle ID)
   - Better organization in the Devices page
-- 🎨 **Integration Icon**: Added 511.org logo as integration icon
 - 📝 **Comprehensive Documentation**:
   - `UPDATING_IN_HAOS.md` - Detailed guide for updating integration
   - `INSTALLATION_HAOS.md` - Step-by-step installation for HAOS users
@@ -265,7 +336,6 @@ This project uses [Semantic Versioning](https://semver.org/):
 **New features automatically available:**
 - ✅ Devices visible in Settings → Devices & Services → Devices
 - ✅ All sensors grouped under devices
-- ✅ Icon visible in integration list
 - ✅ HTTPS API connection (more reliable)
 
 **See:** `UPDATING_IN_HAOS.md` for detailed update instructions

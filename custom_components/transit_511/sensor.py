@@ -77,72 +77,75 @@ async def async_setup_entry(
     if entry.data.get(CONF_MONITORING_TYPE) != MONITORING_TYPE_STOP:
         return
 
-    coordinator: StopDeviceCoordinator = hass.data[DOMAIN][entry.entry_id]
+    # Get all coordinators for this entry
+    entry_data = hass.data[DOMAIN][entry.entry_id]
 
     # Get enabled entities from options
     enabled_entities = entry.options.get(CONF_ENABLED_ENTITIES, [])
 
     entities: list[SensorEntity | BinarySensorEntity] = []
 
-    # Create sensors based on enabled entities
-    if ENTITY_TYPE_COUNT in enabled_entities:
-        entities.append(Transit511CountSensor(coordinator, entry))
+    # Create sensors for each stop/device in this entry
+    for device_id, coordinator in entry_data.items():
+        # Create sensors based on enabled entities
+        if ENTITY_TYPE_COUNT in enabled_entities:
+            entities.append(Transit511CountSensor(coordinator, entry))
 
-    if ENTITY_TYPE_API_TIMESTAMP in enabled_entities:
-        entities.append(Transit511ApiTimestampSensor(coordinator, entry))
+        if ENTITY_TYPE_API_TIMESTAMP in enabled_entities:
+            entities.append(Transit511ApiTimestampSensor(coordinator, entry))
 
-    if ENTITY_TYPE_NEXT_ARRIVAL_MIN in enabled_entities:
-        entities.append(Transit511NextArrivalMinSensor(coordinator, entry))
+        if ENTITY_TYPE_NEXT_ARRIVAL_MIN in enabled_entities:
+            entities.append(Transit511NextArrivalMinSensor(coordinator, entry))
 
-    if ENTITY_TYPE_NEXT_ARRIVAL_TIME in enabled_entities:
-        entities.append(Transit511NextArrivalTimeSensor(coordinator, entry))
+        if ENTITY_TYPE_NEXT_ARRIVAL_TIME in enabled_entities:
+            entities.append(Transit511NextArrivalTimeSensor(coordinator, entry))
 
-    if ENTITY_TYPE_NEXT_VEHICLE in enabled_entities:
-        entities.append(Transit511NextVehicleSensor(coordinator, entry))
+        if ENTITY_TYPE_NEXT_VEHICLE in enabled_entities:
+            entities.append(Transit511NextVehicleSensor(coordinator, entry))
 
-    if ENTITY_TYPE_NEXT_DESTINATION in enabled_entities:
-        entities.append(Transit511NextDestinationSensor(coordinator, entry))
+        if ENTITY_TYPE_NEXT_DESTINATION in enabled_entities:
+            entities.append(Transit511NextDestinationSensor(coordinator, entry))
 
-    if ENTITY_TYPE_NEXT_OCCUPANCY in enabled_entities:
-        entities.append(Transit511NextOccupancySensor(coordinator, entry))
+        if ENTITY_TYPE_NEXT_OCCUPANCY in enabled_entities:
+            entities.append(Transit511NextOccupancySensor(coordinator, entry))
 
-    if ENTITY_TYPE_NEXT_THREE in enabled_entities:
-        entities.append(Transit511NextThreeSensor(coordinator, entry))
+        if ENTITY_TYPE_NEXT_THREE in enabled_entities:
+            entities.append(Transit511NextThreeSensor(coordinator, entry))
 
-    if ENTITY_TYPE_API_OK in enabled_entities:
-        entities.append(Transit511ApiOkSensor(coordinator, entry))
+        if ENTITY_TYPE_API_OK in enabled_entities:
+            entities.append(Transit511ApiOkSensor(coordinator, entry))
 
-    # Direction-filtered entities (IB)
-    if ENTITY_TYPE_IB_COUNT in enabled_entities:
-        entities.append(Transit511DirectionCountSensor(coordinator, entry, DIRECTION_INBOUND))
+        # Direction-filtered entities (IB)
+        if ENTITY_TYPE_IB_COUNT in enabled_entities:
+            entities.append(Transit511DirectionCountSensor(coordinator, entry, DIRECTION_INBOUND))
 
-    if ENTITY_TYPE_IB_NEXT_ARRIVAL_MIN in enabled_entities:
-        entities.append(Transit511DirectionNextArrivalMinSensor(coordinator, entry, DIRECTION_INBOUND))
+        if ENTITY_TYPE_IB_NEXT_ARRIVAL_MIN in enabled_entities:
+            entities.append(Transit511DirectionNextArrivalMinSensor(coordinator, entry, DIRECTION_INBOUND))
 
-    if ENTITY_TYPE_IB_NEXT_ARRIVAL_TIME in enabled_entities:
-        entities.append(Transit511DirectionNextArrivalTimeSensor(coordinator, entry, DIRECTION_INBOUND))
+        if ENTITY_TYPE_IB_NEXT_ARRIVAL_TIME in enabled_entities:
+            entities.append(Transit511DirectionNextArrivalTimeSensor(coordinator, entry, DIRECTION_INBOUND))
 
-    if ENTITY_TYPE_IB_NEXT_VEHICLE in enabled_entities:
-        entities.append(Transit511DirectionNextVehicleSensor(coordinator, entry, DIRECTION_INBOUND))
+        if ENTITY_TYPE_IB_NEXT_VEHICLE in enabled_entities:
+            entities.append(Transit511DirectionNextVehicleSensor(coordinator, entry, DIRECTION_INBOUND))
 
-    if ENTITY_TYPE_IB_NEXT_THREE in enabled_entities:
-        entities.append(Transit511DirectionNextThreeSensor(coordinator, entry, DIRECTION_INBOUND))
+        if ENTITY_TYPE_IB_NEXT_THREE in enabled_entities:
+            entities.append(Transit511DirectionNextThreeSensor(coordinator, entry, DIRECTION_INBOUND))
 
-    # Direction-filtered entities (OB)
-    if ENTITY_TYPE_OB_COUNT in enabled_entities:
-        entities.append(Transit511DirectionCountSensor(coordinator, entry, DIRECTION_OUTBOUND))
+        # Direction-filtered entities (OB)
+        if ENTITY_TYPE_OB_COUNT in enabled_entities:
+            entities.append(Transit511DirectionCountSensor(coordinator, entry, DIRECTION_OUTBOUND))
 
-    if ENTITY_TYPE_OB_NEXT_ARRIVAL_MIN in enabled_entities:
-        entities.append(Transit511DirectionNextArrivalMinSensor(coordinator, entry, DIRECTION_OUTBOUND))
+        if ENTITY_TYPE_OB_NEXT_ARRIVAL_MIN in enabled_entities:
+            entities.append(Transit511DirectionNextArrivalMinSensor(coordinator, entry, DIRECTION_OUTBOUND))
 
-    if ENTITY_TYPE_OB_NEXT_ARRIVAL_TIME in enabled_entities:
-        entities.append(Transit511DirectionNextArrivalTimeSensor(coordinator, entry, DIRECTION_OUTBOUND))
+        if ENTITY_TYPE_OB_NEXT_ARRIVAL_TIME in enabled_entities:
+            entities.append(Transit511DirectionNextArrivalTimeSensor(coordinator, entry, DIRECTION_OUTBOUND))
 
-    if ENTITY_TYPE_OB_NEXT_VEHICLE in enabled_entities:
-        entities.append(Transit511DirectionNextVehicleSensor(coordinator, entry, DIRECTION_OUTBOUND))
+        if ENTITY_TYPE_OB_NEXT_VEHICLE in enabled_entities:
+            entities.append(Transit511DirectionNextVehicleSensor(coordinator, entry, DIRECTION_OUTBOUND))
 
-    if ENTITY_TYPE_OB_NEXT_THREE in enabled_entities:
-        entities.append(Transit511DirectionNextThreeSensor(coordinator, entry, DIRECTION_OUTBOUND))
+        if ENTITY_TYPE_OB_NEXT_THREE in enabled_entities:
+            entities.append(Transit511DirectionNextThreeSensor(coordinator, entry, DIRECTION_OUTBOUND))
 
     async_add_entities(entities)
 

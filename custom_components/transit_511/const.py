@@ -18,6 +18,9 @@ CONF_LINE_ID: Final = "line_id"
 CONF_DIRECTION: Final = "direction"
 CONF_MONITORING_TYPE: Final = "monitoring_type"
 CONF_ENABLED_ENTITIES: Final = "enabled_entities"
+CONF_ENABLE_API_LOGGING: Final = "enable_api_logging"
+CONF_STOPS: Final = "stops"  # List of stop configurations
+CONF_VEHICLES: Final = "vehicles"  # List of vehicle configurations
 
 # Monitoring Types
 MONITORING_TYPE_STOP: Final = "stop"
