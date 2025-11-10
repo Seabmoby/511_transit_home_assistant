@@ -80,8 +80,8 @@ async def async_setup_entry(
     # Get all coordinators for this entry
     entry_data = hass.data[DOMAIN][entry.entry_id]
 
-    # Get enabled entities from options
-    enabled_entities = entry.options.get(CONF_ENABLED_ENTITIES, [])
+    # Get enabled entities from options (default to common entities if not set)
+    enabled_entities = entry.options.get(CONF_ENABLED_ENTITIES, DEFAULT_ENABLED_ENTITIES)
 
     entities: list[SensorEntity | BinarySensorEntity] = []
 

@@ -122,6 +122,27 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 entry,
             )
 
+            # Update device name with real stop name from API data
+            if global_coord.data and global_coord.data.get("visits"):
+                try:
+                    visits = global_coord.data.get("visits", [])
+                    if visits:
+                        journey = visits[0].get("MonitoredVehicleJourney", {})
+                        call = journey.get("MonitoredCall", {})
+                        real_stop_name = call.get("StopPointName", stop_code)
+
+                        # Update device with real stop name
+                        device = device_registry.async_get_device(identifiers={(DOMAIN, device_id)})
+                        if device:
+                            new_name = f"{real_stop_name}" + (f" - Line {line_id}" if line_id else "")
+                            device_registry.async_update_device(
+                                device.id,
+                                name=new_name,
+                            )
+                            _LOGGER.debug("Updated device name to: %s", new_name)
+                except Exception as err:
+                    _LOGGER.debug("Could not update device name immediately: %s", err)
+
             # Store coordinator
             entry_data[device_id] = coordinator
 
