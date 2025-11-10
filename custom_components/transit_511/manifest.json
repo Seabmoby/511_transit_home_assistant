@@ -4,7 +4,7 @@
   "codeowners": [],
   "config_flow": true,
   "dependencies": [],
-  "documentation": "https://github.com/yourusername/transit_511",
+  "documentation": "https://github.com/Seabmoby/511_transit_home_assistant",
   "integration_type": "service",
   "iot_class": "cloud_polling",
   "requirements": [],

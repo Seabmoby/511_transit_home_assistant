@@ -3,7 +3,12 @@
     "allow": [
       "Bash(gh release create:*)",
       "Bash(git checkout:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nv2.0.0-beta: Major architectural restructuring\n\n🚨 BREAKING CHANGES - This is a complete restructuring of the integration\n\nNew Architecture:\n- Integration entries now organized by operator + monitoring type\n- Each entry can contain multiple stops/vehicles as separate devices\n- Example: \"SF Muni - Stops\" contains all Muni stops as devices\n\nConfiguration Changes:\n- New config flow: API Key → Operator → Monitoring Type\n- Creates empty service, user adds stops/vehicles via Options menu\n- Menu-based options flow: Add/Remove/Settings\n\nFeatures Added:\n- ✨ API call logging toggle (off by default)\n- 🔄 Shows API calls, coordinator updates, creation/reuse\n- 🗑️ Removed local icon/logo files\n- 📝 Updated documentation references\n\nFiles Changed:\n- config_flow.py: Complete rewrite for new service-based flow\n- __init__.py: Complete rewrite to handle multiple devices per entry\n- sensor.py: Updated to create sensors for each device\n- device_tracker.py: Updated to create trackers for each device\n- const.py: Added CONF_STOPS and CONF_VEHICLES constants\n- api.py: Added enable_api_logging parameter\n- manifest.json: Bumped to version 2.0.0\n- CHANGELOG.md: Added comprehensive v2.0.0 documentation\n- README.md: Removed icon file references\n\nMigration Required:\nUsers must delete all existing entries and reconfigure as new services.\nSee CHANGELOG.md for detailed migration steps.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(git push:*)",
+      "Bash(gh release delete:*)",
+      "Bash(git commit:*)",
+      "Bash(cat:*)"
     ],
     "deny": [],
     "ask": []
