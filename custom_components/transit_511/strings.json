@@ -2,84 +2,187 @@
   "config": {
     "step": {
       "user": {
-        "title": "511 Transit API Setup",
-        "description": "Enter your 511.org API key to get started. You can obtain a free API key from https://511.org/open-data/token\n\nNote: Your API key will be saved and automatically reused when you add more stops or vehicles.",
+        "title": "511 Transit API Key",
+        "description": "Enter your 511.org API key to get started.\n\n[Get a free API key from 511.org](https://511.org/open-data/token)\n\nNote: Free tier allows 60 API requests per hour. Your API key will be saved and reused for all transit services.",
         "data": {
           "api_key": "API Key"
+        },
+        "data_description": {
+          "api_key": "Your 511.org API token (register at https://511.org/open-data/token)"
+        }
+      },
+      "operator": {
+        "title": "Select Transit Operator",
+        "description": "Choose which Bay Area transit agency you want to monitor.\n\nExamples:\n• SF - San Francisco Muni (buses, light rail, cable cars)\n• BA - BART (regional trains)\n• AC - AC Transit (East Bay buses)\n• CM - Caltrain (peninsula trains)\n\n[View all operators on 511.org](https://511.org/open-data/transit)",
+        "data": {
+          "operator": "Transit Operator"
+        },
+        "data_description": {
+          "operator": "The transit agency you want to track"
         }
       },
       "monitoring_type": {
         "title": "Select Monitoring Type",
-        "description": "Choose the type of monitoring you want to set up. You can add this integration multiple times to monitor multiple stops and vehicles.",
+        "description": "Choose what you want to track for this operator:\n\n**Stop Monitoring**: Track arrival/departure times at specific stops\n**Vehicle Monitoring**: Track GPS location of specific vehicles",
         "data": {
           "monitoring_type": "Monitoring Type"
-        },
-        "data_description": {
-          "monitoring_type": "To add both stop and vehicle monitoring, complete this setup and then add the integration again."
         }
       },
-      "stop_monitoring": {
-        "title": "Stop Monitoring Configuration",
-        "description": "Configure stop monitoring to track arrival and departure times at a specific transit stop.",
+      "add_stop": {
+        "title": "Add Stop",
+        "description": "Add a new transit stop to monitor.\n\nYou can find stop codes:\n• On physical stop signs\n• In the [511.org trip planner](https://511.org/transit)\n• Using the 511.org mobile app",
         "data": {
-          "operator": "Transit Operator/Agency",
           "stop_code": "Stop Code",
-          "line_id": "Line/Route ID (optional)"
+          "line_id": "Line/Route ID (Optional)"
         },
         "data_description": {
-          "operator": "Select the transit operator or agency (e.g., SF for Muni, BA for BART)",
-          "stop_code": "Enter the stop code (e.g., 18031)",
-          "line_id": "Optionally filter by a specific line or route"
+          "stop_code": "The numeric stop code (e.g., 18031)",
+          "line_id": "Filter to specific line (e.g., N, 7, BLUE) - leave empty for all lines at this stop"
         }
       },
-      "vehicle_monitoring": {
-        "title": "Vehicle Monitoring Configuration",
-        "description": "Configure vehicle monitoring to track the GPS location of a specific vehicle.",
+      "add_vehicle": {
+        "title": "Add Vehicle",
+        "description": "Add a specific vehicle to track via GPS.\n\nVehicle IDs are typically 4-digit numbers visible on the vehicle itself.",
         "data": {
-          "operator": "Transit Operator/Agency",
           "vehicle_id": "Vehicle ID"
         },
         "data_description": {
-          "operator": "Select the transit operator or agency",
-          "vehicle_id": "Enter the vehicle ID to track"
+          "vehicle_id": "The vehicle number to track (e.g., 2080)"
+        }
+      },
+      "remove_stop": {
+        "title": "Remove Stop",
+        "description": "Select a stop to remove from this service.",
+        "data": {
+          "stop_to_remove": "Stop to Remove"
+        }
+      },
+      "remove_vehicle": {
+        "title": "Remove Vehicle",
+        "description": "Select a vehicle to remove from this service.",
+        "data": {
+          "vehicle_to_remove": "Vehicle to Remove"
+        }
+      },
+      "settings": {
+        "title": "Settings",
+        "description": "Configure service-wide settings that apply to all stops/vehicles in this integration entry.",
+        "data": {
+          "scan_interval": "Update Interval (seconds)",
+          "enable_api_logging": "Enable API Call Logging",
+          "api_key": "API Key (optional - update only if needed)",
+          "enabled_entities": "Enabled Sensor Types"
+        },
+        "data_description": {
+          "scan_interval": "How often to fetch data (30-300 seconds). Note: 60 requests/hour limit means max 1 request per minute.",
+          "enable_api_logging": "Log detailed API call information for debugging (shows API calls, coordinator updates). Off by default to reduce log noise.",
+          "api_key": "Leave empty to keep current API key. Enter new key only if updating.",
+          "enabled_entities": "Select which sensors to create for stop monitoring"
         }
       }
     },
     "error": {
       "auth_failed": "Authentication failed. Please check your API key.",
-      "cannot_connect": "Unable to connect to the 511 API. Please check your internet connection and try again.",
-      "rate_limit": "API rate limit exceeded. Please wait and try again later.",
-      "invalid_operator": "Invalid operator ID. Please select a valid transit operator.",
-      "invalid_stop": "Invalid stop code. Please check the stop code and try again.",
-      "invalid_vehicle": "Invalid vehicle ID. Please check the vehicle ID and try again.",
-      "unknown": "An unexpected error occurred. Please try again."
+      "cannot_connect": "Cannot connect to 511.org API. Please check your internet connection.",
+      "invalid_stop": "Invalid stop code or stop not found for this operator.",
+      "invalid_vehicle": "Invalid vehicle ID or vehicle not found for this operator.",
+      "rate_limit": "Rate limit exceeded. You've made too many API requests. Wait a few minutes and try again.",
+      "unknown": "An unexpected error occurred. Check Home Assistant logs for details.",
+      "invalid_operator": "Invalid operator selected.",
+      "already_configured": "This stop/vehicle is already configured in this service."
     },
     "abort": {
-      "already_configured": "This stop or vehicle is already configured."
+      "already_configured": "This operator and monitoring type combination already exists. Use the existing service to add more stops/vehicles.",
+      "no_stops": "No stops configured yet. Add stops via 'Add Stop' first.",
+      "no_vehicles": "No vehicles configured yet. Add vehicles via 'Add Vehicle' first."
     }
   },
   "options": {
     "step": {
       "init": {
-        "title": "511 Transit Options",
-        "description": "Configure options for this 511 Transit integration.",
+        "title": "Manage Transit Service",
+        "description": "Choose an action:",
+        "menu_options": {
+          "add_stop": "Add Stop",
+          "add_vehicle": "Add Vehicle",
+          "remove_stop": "Remove Stop",
+          "remove_vehicle": "Remove Vehicle",
+          "settings": "Settings"
+        }
+      },
+      "add_stop": {
+        "title": "Add Stop",
+        "description": "Add a new transit stop to monitor.\n\nYou can find stop codes:\n• On physical stop signs\n• In the [511.org trip planner](https://511.org/transit)\n• Using the 511.org mobile app",
         "data": {
-          "api_key": "API Key (leave blank to keep current)",
-          "scan_interval": "Update Interval (seconds)",
-          "enabled_entities": "Enabled Entity Types"
+          "stop_code": "Stop Code",
+          "line_id": "Line/Route ID (Optional)"
         },
         "data_description": {
-          "api_key": "Update your 511.org API key. Leave blank to keep your existing API key. Changes will be validated before saving.",
-          "scan_interval": "How often to fetch new data from the API (30-300 seconds). Be mindful of the 60 requests/hour rate limit.",
-          "enabled_entities": "Select which entity types to create for this stop"
+          "stop_code": "The numeric stop code (e.g., 18031)",
+          "line_id": "Filter to specific line (e.g., N, 7, BLUE) - leave empty for all lines"
+        }
+      },
+      "add_vehicle": {
+        "title": "Add Vehicle",
+        "description": "Add a specific vehicle to track via GPS.\n\nVehicle IDs are typically 4-digit numbers visible on the vehicle itself.",
+        "data": {
+          "vehicle_id": "Vehicle ID"
+        },
+        "data_description": {
+          "vehicle_id": "The vehicle number to track (e.g., 2080)"
+        }
+      },
+      "remove_stop": {
+        "title": "Remove Stop",
+        "description": "Select a stop to remove from this service.",
+        "data": {
+          "stop_to_remove": "Stop to Remove"
+        }
+      },
+      "remove_vehicle": {
+        "title": "Remove Vehicle",
+        "description": "Select a vehicle to remove from this service.",
+        "data": {
+          "vehicle_to_remove": "Vehicle to Remove"
+        }
+      },
+      "settings": {
+        "title": "Service Settings",
+        "description": "Configure settings that apply to all stops/vehicles in this service.",
+        "data": {
+          "scan_interval": "Update Interval (seconds)",
+          "enable_api_logging": "Enable API Call Logging",
+          "api_key": "Update API Key (optional)",
+          "enabled_entities": "Enabled Sensor Types"
+        },
+        "data_description": {
+          "scan_interval": "How often to fetch data (30-300 seconds). Recommended: 60+ seconds to stay within rate limits.",
+          "enable_api_logging": "Enable detailed logging of API calls and coordinator updates. Useful for debugging, but creates verbose logs.",
+          "api_key": "Leave empty to keep current key. Enter new API key only if you need to update it.",
+          "enabled_entities": "Choose which sensor types to create for stops"
         }
       }
     },
     "error": {
       "auth_failed": "Authentication failed. Please check your API key.",
-      "cannot_connect": "Unable to connect to the 511 API. Please check your internet connection and try again.",
-      "rate_limit": "API rate limit exceeded. Please wait and try again later.",
-      "unknown": "An unexpected error occurred. Please try again."
+      "cannot_connect": "Cannot connect to 511.org API. Please check your internet connection.",
+      "invalid_stop": "Invalid stop code or stop not found for this operator.",
+      "invalid_vehicle": "Invalid vehicle ID or vehicle not found for this operator.",
+      "rate_limit": "Rate limit exceeded. Wait a few minutes and try again.",
+      "unknown": "An unexpected error occurred. Check logs for details.",
+      "already_configured": "This stop/vehicle is already in this service."
+    },
+    "abort": {
+      "no_stops": "No stops to remove. Add stops first.",
+      "no_vehicles": "No vehicles to remove. Add vehicles first."
+    }
+  },
+  "selector": {
+    "enable_api_logging": {
+      "options": {
+        "true": "Enable (verbose logging)",
+        "false": "Disable (recommended)"
+      }
     }
   }
 }
