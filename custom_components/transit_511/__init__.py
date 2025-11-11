@@ -207,6 +207,33 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
 
     if unload_ok:
+        # Get the operator from this entry
+        operator = entry.data[CONF_OPERATOR]
+        monitoring_type = entry.data[CONF_MONITORING_TYPE]
+
+        # Clean up global coordinators that were created for this entry's stops
+        # (This prevents zombie coordinators from being reused after reload)
+        if monitoring_type == MONITORING_TYPE_STOP:
+            stops = entry.data.get(CONF_STOPS, [])
+            global_coordinators = hass.data[DOMAIN].get(GLOBAL_COORDINATORS, {})
+
+            for stop_config in stops:
+                stop_code = stop_config["stop_code"]
+                global_coord_key = f"{operator}_{stop_code}"
+
+                # Remove this stop's global coordinator
+                if global_coord_key in global_coordinators:
+                    _LOGGER.debug(
+                        "Removing GlobalStopCoordinator for %s stop %s during unload",
+                        operator,
+                        stop_code,
+                    )
+                    global_coordinators.pop(global_coord_key, None)
+
+        # Note: Vehicle monitoring doesn't use global coordinators,
+        # so no cleanup needed for MONITORING_TYPE_VEHICLE
+
+        # Remove entry-specific data
         hass.data[DOMAIN].pop(entry.entry_id, None)
 
     return unload_ok
