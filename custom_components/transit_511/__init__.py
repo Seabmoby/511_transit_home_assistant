@@ -85,6 +85,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             global_coord_key = f"{operator}_{stop_code}"
 
             if global_coord_key not in global_coordinators:
+                _LOGGER.debug(
+                    "Creating NEW GlobalStopCoordinator for %s stop %s (scan_interval=%ss)",
+                    operator,
+                    stop_code,
+                    scan_interval,
+                )
                 global_coord = GlobalStopCoordinator(
                     hass,
                     client,
@@ -95,6 +101,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 )
                 await global_coord.async_config_entry_first_refresh()
                 global_coordinators[global_coord_key] = global_coord
+                _LOGGER.debug(
+                    "GlobalStopCoordinator created and stored for %s_%s",
+                    operator,
+                    stop_code,
+                )
                 if enable_api_logging:
                     _LOGGER.info(
                         "✨ Created NEW GlobalStopCoordinator for %s stop %s (scan_interval=%ss)",
@@ -103,6 +114,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                         scan_interval,
                     )
             else:
+                _LOGGER.debug(
+                    "REUSING existing GlobalStopCoordinator for %s stop %s",
+                    operator,
+                    stop_code,
+                )
                 global_coord = global_coordinators[global_coord_key]
                 if enable_api_logging:
                     _LOGGER.info(
@@ -223,6 +239,11 @@ class GlobalStopCoordinator(DataUpdateCoordinator):
 
     async def _async_update_data(self):
         """Fetch data from API (shared by all devices monitoring this stop)."""
+        _LOGGER.debug(
+            "GlobalStopCoordinator._async_update_data called for %s stop %s",
+            self.operator,
+            self.stop_code,
+        )
         if self.enable_api_logging:
             _LOGGER.info(
                 "🔄 GlobalStopCoordinator UPDATE - Operator: %s, Stop: %s",
@@ -283,6 +304,11 @@ class StopDeviceCoordinator(DataUpdateCoordinator):
 
     def _handle_global_coordinator_update(self) -> None:
         """Handle updates from global coordinator."""
+        _LOGGER.debug(
+            "StopDeviceCoordinator._handle_global_coordinator_update called for %s stop %s",
+            self.operator,
+            self.stop_code,
+        )
         # Filter and process data
         self.async_set_updated_data(self._filter_data())
 
