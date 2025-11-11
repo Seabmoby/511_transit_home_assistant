@@ -257,7 +257,7 @@ class Transit511BaseSensor(CoordinatorEntity, SensorEntity):
             ATTR_STOP_NAME: self._stop_name,
             ATTR_LINE: line_ref or self._line_id,  # Use API data or fallback to config
             ATTR_LINE_NAME: line_name,
-            ATTR_LAST_UPDATED: self.coordinator.data.get("response_timestamp"),
+            ATTR_LAST_UPDATED: self.coordinator.data.get("response_timestamp") if self.coordinator.data else None,
         }
 
         # Add directions if present (e.g., "IB, OB" or just "IB")
@@ -273,6 +273,9 @@ class Transit511BaseSensor(CoordinatorEntity, SensorEntity):
 
     def _get_visits(self, direction: str | None = None) -> list[dict[str, Any]]:
         """Get visits, optionally filtered by direction."""
+        if not self.coordinator.data:
+            return []
+
         visits = self.coordinator.data.get("visits", [])
 
         if direction:
@@ -356,6 +359,8 @@ class Transit511ApiTimestampSensor(Transit511BaseSensor):
     @property
     def native_value(self) -> datetime | None:
         """Return the state of the sensor."""
+        if not self.coordinator.data:
+            return None
         timestamp = self.coordinator.data.get("response_timestamp")
         if timestamp:
             try:
@@ -520,7 +525,9 @@ class Transit511ApiOkSensor(CoordinatorEntity, BinarySensorEntity):
     def name(self) -> str:
         """Return the name of the sensor."""
         # Build name: [stop_name] [directions] | API OK
-        visits = self.coordinator.data.get("visits", [])
+        visits = []
+        if self.coordinator.data:
+            visits = self.coordinator.data.get("visits", [])
 
         # Get stop name and directions from API
         stop_name = self._stop_name
@@ -553,6 +560,8 @@ class Transit511ApiOkSensor(CoordinatorEntity, BinarySensorEntity):
     @property
     def is_on(self) -> bool:
         """Return true if API is responding."""
+        if not self.coordinator.data:
+            return self.coordinator.last_update_success
         return len(self.coordinator.data.get("visits", [])) > 0 or self.coordinator.last_update_success
 
 
