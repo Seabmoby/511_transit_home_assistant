@@ -278,8 +278,7 @@ class StopDeviceCoordinator(DataUpdateCoordinator):
             update_interval=timedelta(seconds=9999999),  # Never auto-update
         )
 
-        # Listen to global coordinator
-        self.async_add_listener(self._handle_global_coordinator_update)
+        # Listen to global coordinator (not to self, to avoid infinite recursion)
         global_coordinator.async_add_listener(self._handle_global_coordinator_update)
 
     def _handle_global_coordinator_update(self) -> None:
