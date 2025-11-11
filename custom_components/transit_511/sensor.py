@@ -170,10 +170,11 @@ class Transit511BaseSensor(CoordinatorEntity, SensorEntity):
         """Initialize the sensor."""
         super().__init__(coordinator)
 
-        self._operator = entry.data[CONF_OPERATOR]
-        self._stop_code = entry.data[CONF_STOP_CODE]
-        self._line_id = entry.data.get(CONF_LINE_ID)
-        self._stop_name = entry.data.get("stop_name", self._stop_code)
+        # Get data from coordinator (v2.0 architecture)
+        self._operator = coordinator.operator
+        self._stop_code = coordinator.stop_code
+        self._line_id = coordinator.line_id
+        self._stop_name = self._stop_code  # Will be updated from API data
         self._operator_name = entry.data.get("operator_name", self._operator)
         self._entity_type = entity_type
         self._entry = entry
@@ -498,10 +499,11 @@ class Transit511ApiOkSensor(CoordinatorEntity, BinarySensorEntity):
         """Initialize the sensor."""
         super().__init__(coordinator)
 
-        self._operator = entry.data[CONF_OPERATOR]
-        self._stop_code = entry.data[CONF_STOP_CODE]
-        self._line_id = entry.data.get(CONF_LINE_ID)
-        self._stop_name = entry.data.get("stop_name", self._stop_code)
+        # Get data from coordinator (v2.0 architecture)
+        self._operator = coordinator.operator
+        self._stop_code = coordinator.stop_code
+        self._line_id = coordinator.line_id
+        self._stop_name = self._stop_code  # Will be updated from API data
         self._entry = entry
 
         line_part = f"_{self._line_id}" if self._line_id else ""
