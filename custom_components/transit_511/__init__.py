@@ -256,6 +256,8 @@ class GlobalStopCoordinator(DataUpdateCoordinator):
         self.operator = operator
         self.stop_code = stop_code
         self.enable_api_logging = enable_api_logging
+        self.scan_interval = scan_interval
+        self._first_update_done = False
 
         super().__init__(
             hass,
@@ -277,6 +279,30 @@ class GlobalStopCoordinator(DataUpdateCoordinator):
                 self.operator,
                 self.stop_code
             )
+
+        # After first update, wait 60 seconds before starting regular schedule
+        # This prevents rate limiting while giving immediate feedback on startup
+        if self._first_update_done:
+            # Check if we need to adjust the interval back to user preference
+            if self.update_interval == timedelta(seconds=60):
+                _LOGGER.debug(
+                    "Switching from initial 60s delay to user's %ss interval for %s stop %s",
+                    self.scan_interval,
+                    self.operator,
+                    self.stop_code,
+                )
+                self.update_interval = timedelta(seconds=self.scan_interval)
+        else:
+            # First update - set next update to 60 seconds from now
+            _LOGGER.debug(
+                "First update for %s stop %s - next update in 60s (then every %ss)",
+                self.operator,
+                self.stop_code,
+                self.scan_interval,
+            )
+            self._first_update_done = True
+            self.update_interval = timedelta(seconds=60)
+
         try:
             data = await self.client.get_stop_monitoring(self.operator, self.stop_code)
 
@@ -436,7 +462,9 @@ class Transit511VehicleCoordinator(DataUpdateCoordinator):
         self.vehicle_id = vehicle_id
         self.device_id = device_id
         self.enable_api_logging = enable_api_logging
+        self.scan_interval = scan_interval
         self._device_name_updated = False
+        self._first_update_done = False
 
         super().__init__(
             hass,
@@ -453,6 +481,30 @@ class Transit511VehicleCoordinator(DataUpdateCoordinator):
                 self.operator,
                 self.vehicle_id
             )
+
+        # After first update, wait 60 seconds before starting regular schedule
+        # This prevents rate limiting while giving immediate feedback on startup
+        if self._first_update_done:
+            # Check if we need to adjust the interval back to user preference
+            if self.update_interval == timedelta(seconds=60):
+                _LOGGER.debug(
+                    "Switching from initial 60s delay to user's %ss interval for %s vehicle %s",
+                    self.scan_interval,
+                    self.operator,
+                    self.vehicle_id,
+                )
+                self.update_interval = timedelta(seconds=self.scan_interval)
+        else:
+            # First update - set next update to 60 seconds from now
+            _LOGGER.debug(
+                "First update for %s vehicle %s - next update in 60s (then every %ss)",
+                self.operator,
+                self.vehicle_id,
+                self.scan_interval,
+            )
+            self._first_update_done = True
+            self.update_interval = timedelta(seconds=60)
+
         try:
             data = await self.client.get_vehicle_monitoring(
                 self.operator, self.vehicle_id

@@ -175,8 +175,8 @@
     "abort": {
       "no_stops": "No stops to remove. Add stops first.",
       "no_vehicles": "No vehicles to remove. Add vehicles first.",
-      "stop_added": "Stop {stop_code} added successfully!\n\nEntities have been created and will show real-time data within {scan_interval} seconds.\n\nIf entities show 'unknown', wait for the next update cycle.",
-      "vehicle_added": "Vehicle {vehicle_id} added successfully!\n\nEntities have been created and will show real-time data within {scan_interval} seconds.\n\nIf entities show 'unknown', wait for the next update cycle."
+      "stop_added": "Stop {stop_code} added successfully!\n\nEntities have been created and are fetching initial data now. Data will refresh in 60 seconds, then update every {scan_interval} seconds.\n\nIf entities show 'unknown', wait up to 60 seconds for the first refresh.",
+      "vehicle_added": "Vehicle {vehicle_id} added successfully!\n\nEntities have been created and are fetching initial data now. Data will refresh in 60 seconds, then update every {scan_interval} seconds.\n\nIf entities show 'unknown', wait up to 60 seconds for the first refresh."
     }
   },
   "selector": {
