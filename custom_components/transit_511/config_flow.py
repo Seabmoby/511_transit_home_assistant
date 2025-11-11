@@ -277,7 +277,17 @@ class Transit511OptionsFlowHandler(config_entries.OptionsFlow):
                         data=new_data,
                     )
                     await self.hass.config_entries.async_reload(self.config_entry.entry_id)
-                    return self.async_create_entry(title="", data={})
+
+                    # Get scan interval from options
+                    scan_interval = self.config_entry.options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
+
+                    return self.async_abort(
+                        reason="stop_added",
+                        description_placeholders={
+                            "stop_code": stop_code,
+                            "scan_interval": str(scan_interval),
+                        },
+                    )
             except Exception:
                 _LOGGER.exception("Error adding stop")
                 errors["base"] = ERROR_INVALID_STOP
@@ -326,7 +336,17 @@ class Transit511OptionsFlowHandler(config_entries.OptionsFlow):
                         data=new_data,
                     )
                     await self.hass.config_entries.async_reload(self.config_entry.entry_id)
-                    return self.async_create_entry(title="", data={})
+
+                    # Get scan interval from options
+                    scan_interval = self.config_entry.options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
+
+                    return self.async_abort(
+                        reason="vehicle_added",
+                        description_placeholders={
+                            "vehicle_id": vehicle_id,
+                            "scan_interval": str(scan_interval),
+                        },
+                    )
             except Exception:
                 _LOGGER.exception("Error adding vehicle")
                 errors["base"] = "invalid_vehicle"
