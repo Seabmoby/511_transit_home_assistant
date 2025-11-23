@@ -17,9 +17,11 @@ from .const import (
     CONF_ENABLE_API_LOGGING,
     CONF_MONITORING_TYPE,
     CONF_OPERATOR,
+    CONF_STARTUP_DELAY,
     CONF_STOPS,
     CONF_VEHICLES,
     DEFAULT_SCAN_INTERVAL,
+    DEFAULT_STARTUP_DELAY,
     DOMAIN,
     MONITORING_TYPE_STOP,
     MONITORING_TYPE_VEHICLE,
@@ -43,6 +45,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     # Get options
     scan_interval = entry.options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
+    startup_delay = entry.options.get(CONF_STARTUP_DELAY, DEFAULT_STARTUP_DELAY)
     enable_api_logging = entry.options.get(CONF_ENABLE_API_LOGGING, False)
 
     # Create API client
@@ -97,6 +100,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                     operator,
                     stop_code,
                     scan_interval,
+                    startup_delay,
                     enable_api_logging,
                 )
                 await global_coord.async_config_entry_first_refresh()
@@ -188,6 +192,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 operator,
                 vehicle_id,
                 scan_interval,
+                startup_delay,
                 device_id,
                 enable_api_logging,
             )
@@ -249,6 +254,7 @@ class GlobalStopCoordinator(DataUpdateCoordinator):
         operator: str,
         stop_code: str,
         scan_interval: int,
+        startup_delay: int,
         enable_api_logging: bool = False,
     ) -> None:
         """Initialize the global coordinator."""
@@ -257,6 +263,7 @@ class GlobalStopCoordinator(DataUpdateCoordinator):
         self.stop_code = stop_code
         self.enable_api_logging = enable_api_logging
         self.scan_interval = scan_interval
+        self.startup_delay = startup_delay
         self._first_update_done = False
 
         super().__init__(
@@ -280,28 +287,30 @@ class GlobalStopCoordinator(DataUpdateCoordinator):
                 self.stop_code
             )
 
-        # After first update, wait 60 seconds before starting regular schedule
+        # After first update, wait startup_delay seconds before starting regular schedule
         # This prevents rate limiting while giving immediate feedback on startup
         if self._first_update_done:
             # Check if we need to adjust the interval back to user preference
-            if self.update_interval == timedelta(seconds=60):
+            if self.update_interval == timedelta(seconds=self.startup_delay):
                 _LOGGER.debug(
-                    "Switching from initial 60s delay to user's %ss interval for %s stop %s",
+                    "Switching from initial %ss delay to user's %ss interval for %s stop %s",
+                    self.startup_delay,
                     self.scan_interval,
                     self.operator,
                     self.stop_code,
                 )
                 self.update_interval = timedelta(seconds=self.scan_interval)
         else:
-            # First update - set next update to 60 seconds from now
+            # First update - set next update to startup_delay seconds from now
             _LOGGER.debug(
-                "First update for %s stop %s - next update in 60s (then every %ss)",
+                "First update for %s stop %s - next update in %ss (then every %ss)",
                 self.operator,
                 self.stop_code,
+                self.startup_delay,
                 self.scan_interval,
             )
             self._first_update_done = True
-            self.update_interval = timedelta(seconds=60)
+            self.update_interval = timedelta(seconds=self.startup_delay)
 
         try:
             data = await self.client.get_stop_monitoring(self.operator, self.stop_code)
@@ -453,6 +462,7 @@ class Transit511VehicleCoordinator(DataUpdateCoordinator):
         operator: str,
         vehicle_id: str,
         scan_interval: int,
+        startup_delay: int,
         device_id: str,
         enable_api_logging: bool = False,
     ) -> None:
@@ -463,6 +473,7 @@ class Transit511VehicleCoordinator(DataUpdateCoordinator):
         self.device_id = device_id
         self.enable_api_logging = enable_api_logging
         self.scan_interval = scan_interval
+        self.startup_delay = startup_delay
         self._device_name_updated = False
         self._first_update_done = False
 
@@ -482,28 +493,30 @@ class Transit511VehicleCoordinator(DataUpdateCoordinator):
                 self.vehicle_id
             )
 
-        # After first update, wait 60 seconds before starting regular schedule
+        # After first update, wait startup_delay seconds before starting regular schedule
         # This prevents rate limiting while giving immediate feedback on startup
         if self._first_update_done:
             # Check if we need to adjust the interval back to user preference
-            if self.update_interval == timedelta(seconds=60):
+            if self.update_interval == timedelta(seconds=self.startup_delay):
                 _LOGGER.debug(
-                    "Switching from initial 60s delay to user's %ss interval for %s vehicle %s",
+                    "Switching from initial %ss delay to user's %ss interval for %s vehicle %s",
+                    self.startup_delay,
                     self.scan_interval,
                     self.operator,
                     self.vehicle_id,
                 )
                 self.update_interval = timedelta(seconds=self.scan_interval)
         else:
-            # First update - set next update to 60 seconds from now
+            # First update - set next update to startup_delay seconds from now
             _LOGGER.debug(
-                "First update for %s vehicle %s - next update in 60s (then every %ss)",
+                "First update for %s vehicle %s - next update in %ss (then every %ss)",
                 self.operator,
                 self.vehicle_id,
+                self.startup_delay,
                 self.scan_interval,
             )
             self._first_update_done = True
-            self.update_interval = timedelta(seconds=60)
+            self.update_interval = timedelta(seconds=self.startup_delay)
 
         try:
             data = await self.client.get_vehicle_monitoring(

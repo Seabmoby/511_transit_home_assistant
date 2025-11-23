@@ -28,12 +28,14 @@ from .const import (
     CONF_LINE_ID,
     CONF_MONITORING_TYPE,
     CONF_OPERATOR,
+    CONF_STARTUP_DELAY,
     CONF_STOP_CODE,
     CONF_STOPS,
     CONF_VEHICLE_ID,
     CONF_VEHICLES,
     DEFAULT_ENABLED_ENTITIES,
     DEFAULT_SCAN_INTERVAL,
+    DEFAULT_STARTUP_DELAY,
     DIRECTION_FILTERED_ENTITY_TYPES,
     DOMAIN,
     ERROR_AUTH_FAILED,
@@ -43,7 +45,9 @@ from .const import (
     ERROR_RATE_LIMIT,
     ERROR_UNKNOWN,
     MAX_SCAN_INTERVAL,
+    MAX_STARTUP_DELAY,
     MIN_SCAN_INTERVAL,
+    MIN_STARTUP_DELAY,
     MONITORING_TYPE_STOP,
     MONITORING_TYPE_VEHICLE,
 )
@@ -278,14 +282,16 @@ class Transit511OptionsFlowHandler(config_entries.OptionsFlow):
                     )
                     await self.hass.config_entries.async_reload(self.config_entry.entry_id)
 
-                    # Get scan interval from options
+                    # Get scan interval and startup delay from options
                     scan_interval = self.config_entry.options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
+                    startup_delay = self.config_entry.options.get(CONF_STARTUP_DELAY, DEFAULT_STARTUP_DELAY)
 
                     return self.async_abort(
                         reason="stop_added",
                         description_placeholders={
                             "stop_code": stop_code,
                             "scan_interval": str(scan_interval),
+                            "startup_delay": str(startup_delay),
                         },
                     )
             except Exception:
@@ -337,14 +343,16 @@ class Transit511OptionsFlowHandler(config_entries.OptionsFlow):
                     )
                     await self.hass.config_entries.async_reload(self.config_entry.entry_id)
 
-                    # Get scan interval from options
+                    # Get scan interval and startup delay from options
                     scan_interval = self.config_entry.options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
+                    startup_delay = self.config_entry.options.get(CONF_STARTUP_DELAY, DEFAULT_STARTUP_DELAY)
 
                     return self.async_abort(
                         reason="vehicle_added",
                         description_placeholders={
                             "vehicle_id": vehicle_id,
                             "scan_interval": str(scan_interval),
+                            "startup_delay": str(startup_delay),
                         },
                     )
             except Exception:
@@ -492,6 +500,15 @@ class Transit511OptionsFlowHandler(config_entries.OptionsFlow):
             ): vol.All(
                 vol.Coerce(int),
                 vol.Range(min=MIN_SCAN_INTERVAL, max=MAX_SCAN_INTERVAL),
+            ),
+            vol.Optional(
+                CONF_STARTUP_DELAY,
+                default=self.config_entry.options.get(
+                    CONF_STARTUP_DELAY, DEFAULT_STARTUP_DELAY
+                ),
+            ): vol.All(
+                vol.Coerce(int),
+                vol.Range(min=MIN_STARTUP_DELAY, max=MAX_STARTUP_DELAY),
             ),
             vol.Optional(
                 CONF_ENABLE_API_LOGGING,

@@ -69,12 +69,14 @@
         "description": "Configure service-wide settings that apply to all stops/vehicles in this integration entry.",
         "data": {
           "scan_interval": "Update Interval (seconds)",
+          "startup_delay": "Startup Delay (seconds)",
           "enable_api_logging": "Enable API Call Logging",
           "api_key": "API Key (optional - update only if needed)",
           "enabled_entities": "Enabled Sensor Types"
         },
         "data_description": {
           "scan_interval": "How often to fetch data (30-300 seconds). Note: 60 requests/hour limit means max 1 request per minute.",
+          "startup_delay": "Delay between first and second API call on startup (0-300 seconds). Prevents rate limiting when restarting Home Assistant with multiple stops/vehicles. Default: 60 seconds.",
           "enable_api_logging": "Log detailed API call information for debugging (shows API calls, coordinator updates). Off by default to reduce log noise.",
           "api_key": "Leave empty to keep current API key. Enter new key only if updating.",
           "enabled_entities": "Select which sensors to create for stop monitoring"
@@ -151,12 +153,14 @@
         "description": "Configure settings that apply to all stops/vehicles in this service.",
         "data": {
           "scan_interval": "Update Interval (seconds)",
+          "startup_delay": "Startup Delay (seconds)",
           "enable_api_logging": "Enable API Call Logging",
           "api_key": "Update API Key (optional)",
           "enabled_entities": "Enabled Sensor Types"
         },
         "data_description": {
           "scan_interval": "How often to fetch data (30-300 seconds). Recommended: 60+ seconds to stay within rate limits.",
+          "startup_delay": "Delay between first and second API call on startup (0-300 seconds). Prevents rate limiting when restarting Home Assistant. Default: 60 seconds.",
           "enable_api_logging": "Enable detailed logging of API calls and coordinator updates. Useful for debugging, but creates verbose logs.",
           "api_key": "Leave empty to keep current key. Enter new API key only if you need to update it.",
           "enabled_entities": "Choose which sensor types to create for stops"
@@ -175,8 +179,8 @@
     "abort": {
       "no_stops": "No stops to remove. Add stops first.",
       "no_vehicles": "No vehicles to remove. Add vehicles first.",
-      "stop_added": "Stop {stop_code} added successfully!\n\nEntities have been created and are fetching initial data now. Data will refresh in 60 seconds, then update every {scan_interval} seconds.\n\nIf entities show 'unknown', wait up to 60 seconds for the first refresh.",
-      "vehicle_added": "Vehicle {vehicle_id} added successfully!\n\nEntities have been created and are fetching initial data now. Data will refresh in 60 seconds, then update every {scan_interval} seconds.\n\nIf entities show 'unknown', wait up to 60 seconds for the first refresh."
+      "stop_added": "Stop {stop_code} added successfully!\n\nEntities have been created and are fetching initial data now. Data will refresh in {startup_delay} seconds, then update every {scan_interval} seconds.\n\nIf entities show 'unknown', wait up to {startup_delay} seconds for the first refresh.",
+      "vehicle_added": "Vehicle {vehicle_id} added successfully!\n\nEntities have been created and are fetching initial data now. Data will refresh in {startup_delay} seconds, then update every {scan_interval} seconds.\n\nIf entities show 'unknown', wait up to {startup_delay} seconds for the first refresh."
     }
   },
   "selector": {
