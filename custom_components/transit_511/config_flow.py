@@ -11,6 +11,7 @@ from homeassistant.const import CONF_SCAN_INTERVAL
 from homeassistant.core import callback
 from homeassistant.data_entry_flow import FlowResult
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
+from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import selector
 from homeassistant.helpers import config_validation as cv
 
@@ -381,6 +382,13 @@ class Transit511OptionsFlowHandler(config_entries.OptionsFlow):
 
         if user_input is not None:
             stop_to_remove = user_input["stop_to_remove"]
+            operator = self.config_entry.data[CONF_OPERATOR]
+
+            # Identify the stop being removed so we can clean up its device.
+            removed_stop = next(
+                (s for s in stops if f"{s['stop_code']}_{s.get('line_id', '')}" == stop_to_remove),
+                None,
+            )
 
             new_data = dict(self.config_entry.data)
             new_stops = [s for s in stops if f"{s['stop_code']}_{s.get('line_id', '')}" != stop_to_remove]
@@ -390,6 +398,19 @@ class Transit511OptionsFlowHandler(config_entries.OptionsFlow):
                 self.config_entry,
                 data=new_data,
             )
+
+            # Remove the orphaned device (and its entities) for the deleted stop.
+            # Reloading only recreates devices for the remaining stops, so without
+            # this the removed stop lingers in the registry as unavailable.
+            if removed_stop is not None:
+                device_id = f"{operator}_{removed_stop['stop_code']}"
+                if removed_stop.get("line_id"):
+                    device_id += f"_{removed_stop['line_id']}"
+                dev_reg = dr.async_get(self.hass)
+                device = dev_reg.async_get_device(identifiers={(DOMAIN, device_id)})
+                if device:
+                    dev_reg.async_remove_device(device.id)
+
             await self.hass.config_entries.async_reload(self.config_entry.entry_id)
             return self.async_create_entry(title="", data={})
 
@@ -423,6 +444,7 @@ class Transit511OptionsFlowHandler(config_entries.OptionsFlow):
 
         if user_input is not None:
             vehicle_to_remove = user_input["vehicle_to_remove"]
+            operator = self.config_entry.data[CONF_OPERATOR]
 
             new_data = dict(self.config_entry.data)
             new_vehicles = [v for v in vehicles if v["vehicle_id"] != vehicle_to_remove]
@@ -432,6 +454,14 @@ class Transit511OptionsFlowHandler(config_entries.OptionsFlow):
                 self.config_entry,
                 data=new_data,
             )
+
+            # Remove the orphaned device (and its entities) for the deleted vehicle.
+            device_id = f"{operator}_vehicle_{vehicle_to_remove}"
+            dev_reg = dr.async_get(self.hass)
+            device = dev_reg.async_get_device(identifiers={(DOMAIN, device_id)})
+            if device:
+                dev_reg.async_remove_device(device.id)
+
             await self.hass.config_entries.async_reload(self.config_entry.entry_id)
             return self.async_create_entry(title="", data={})
 

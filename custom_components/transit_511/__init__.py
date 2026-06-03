@@ -312,6 +312,52 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     return unload_ok
 
 
+async def async_remove_config_entry_device(
+    hass: HomeAssistant, entry: ConfigEntry, device_entry: dr.DeviceEntry
+) -> bool:
+    """Allow a device to be deleted from the UI and drop it from the entry.
+
+    Without this, Home Assistant blocks manual device deletion while the
+    integration is loaded. Removing the matching stop/vehicle from the entry
+    data also stops it from being recreated on the next reload.
+    """
+    operator = entry.data.get(CONF_OPERATOR)
+    device_ids = {ident[1] for ident in device_entry.identifiers if ident[0] == DOMAIN}
+    if not device_ids:
+        return True
+
+    new_data = dict(entry.data)
+    removed = False
+
+    if entry.data.get(CONF_MONITORING_TYPE) == MONITORING_TYPE_STOP:
+        kept = []
+        for stop in new_data.get(CONF_STOPS, []):
+            device_id = f"{operator}_{stop['stop_code']}"
+            if stop.get("line_id"):
+                device_id += f"_{stop['line_id']}"
+            if device_id in device_ids:
+                removed = True
+            else:
+                kept.append(stop)
+        new_data[CONF_STOPS] = kept
+    else:
+        kept = []
+        for vehicle in new_data.get(CONF_VEHICLES, []):
+            device_id = f"{operator}_vehicle_{vehicle['vehicle_id']}"
+            if device_id in device_ids:
+                removed = True
+            else:
+                kept.append(vehicle)
+        new_data[CONF_VEHICLES] = kept
+
+    if removed:
+        hass.config_entries.async_update_entry(entry, data=new_data)
+        # Reload so coordinators for the removed device are torn down cleanly.
+        hass.config_entries.async_schedule_reload(entry.entry_id)
+
+    return True
+
+
 class GlobalStopCoordinator(DataUpdateCoordinator):
     """Global coordinator that fetches data for a stop (shared across devices)."""
 
