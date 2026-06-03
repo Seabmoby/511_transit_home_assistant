@@ -8,6 +8,9 @@ API_BASE_URL: Final = "https://api.511.org/transit"
 DEFAULT_SCAN_INTERVAL: Final = 60  # seconds
 MIN_SCAN_INTERVAL: Final = 30
 MAX_SCAN_INTERVAL: Final = 300
+DEFAULT_STARTUP_DELAY: Final = 60  # seconds - delay after first update to prevent rate limiting
+MIN_STARTUP_DELAY: Final = 0
+MAX_STARTUP_DELAY: Final = 300
 
 # Configuration Keys
 CONF_API_KEY: Final = "api_key"
@@ -18,6 +21,10 @@ CONF_LINE_ID: Final = "line_id"
 CONF_DIRECTION: Final = "direction"
 CONF_MONITORING_TYPE: Final = "monitoring_type"
 CONF_ENABLED_ENTITIES: Final = "enabled_entities"
+CONF_ENABLE_API_LOGGING: Final = "enable_api_logging"
+CONF_STARTUP_DELAY: Final = "startup_delay"
+CONF_STOPS: Final = "stops"  # List of stop configurations
+CONF_VEHICLES: Final = "vehicles"  # List of vehicle configurations
 
 # Monitoring Types
 MONITORING_TYPE_STOP: Final = "stop"

@@ -5,11 +5,7 @@ A custom Home Assistant integration for the 511.org Transit API that provides re
 ## Features
 
 - **API Key Reuse** 🔑 *(v1.3.0)*: Enter your API key once, then automatically reuse it for all future stops/vehicles - no more re-entering credentials!
-- **Smart Icons** 🎨: Icons automatically change based on vehicle type!
-  - SF Muni: Letters (N, T) → 🚊 train, Numbers (7, 14) → 🚌 bus
-  - BART, Caltrain → Always 🚊 train
-  - AC Transit, SamTrans → Always 🚌 bus
-  - See `SMART_ICONS.md` for details
+- **Smart Icons** 🎨: Icons automatically change based on vehicle type (SF Muni: Letters → 🚊 train, Numbers → 🚌 bus, BART/Caltrain → 🚊 train, AC Transit/SamTrans → 🚌 bus)
 - **Device Organization**: Each stop or vehicle creates a dedicated Device with all sensors grouped together
 - **Stop Monitoring**: Track arrival and departure times at transit stops
 - **Vehicle Tracking**: GPS tracking of individual transit vehicles via device_tracker

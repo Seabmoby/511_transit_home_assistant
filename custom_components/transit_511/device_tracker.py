@@ -46,9 +46,15 @@ async def async_setup_entry(
     if entry.data.get(CONF_MONITORING_TYPE) != MONITORING_TYPE_VEHICLE:
         return
 
-    coordinator: Transit511VehicleCoordinator = hass.data[DOMAIN][entry.entry_id]
+    # Get all coordinators for this entry
+    entry_data = hass.data[DOMAIN][entry.entry_id]
 
-    async_add_entities([Transit511VehicleTracker(coordinator, entry)])
+    # Create a device tracker for each vehicle
+    entities = []
+    for device_id, coordinator in entry_data.items():
+        entities.append(Transit511VehicleTracker(coordinator, entry))
+
+    async_add_entities(entities)
 
 
 class Transit511VehicleTracker(CoordinatorEntity, TrackerEntity):

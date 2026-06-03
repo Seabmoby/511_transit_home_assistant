@@ -37,6 +37,7 @@ from .const import (
     CONF_MONITORING_TYPE,
     CONF_OPERATOR,
     CONF_STOP_CODE,
+    DEFAULT_ENABLED_ENTITIES,
     DIRECTION_INBOUND,
     DIRECTION_OUTBOUND,
     DOMAIN,
@@ -73,77 +74,87 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up 511 Transit sensors from a config entry."""
+    _LOGGER.info("Setting up sensors for entry: %s", entry.title)
+
     # Only set up sensors for stop monitoring
     if entry.data.get(CONF_MONITORING_TYPE) != MONITORING_TYPE_STOP:
+        _LOGGER.info("Skipping sensor setup - not stop monitoring")
         return
 
-    coordinator: StopDeviceCoordinator = hass.data[DOMAIN][entry.entry_id]
+    # Get all coordinators for this entry
+    entry_data = hass.data[DOMAIN].get(entry.entry_id, {})
+    _LOGGER.info("Found %d coordinators for entry", len(entry_data))
 
-    # Get enabled entities from options
-    enabled_entities = entry.options.get(CONF_ENABLED_ENTITIES, [])
+    # Get enabled entities from options (default to common entities if not set)
+    enabled_entities = entry.options.get(CONF_ENABLED_ENTITIES, DEFAULT_ENABLED_ENTITIES)
+    _LOGGER.info("Enabled entities: %s", enabled_entities)
 
     entities: list[SensorEntity | BinarySensorEntity] = []
 
-    # Create sensors based on enabled entities
-    if ENTITY_TYPE_COUNT in enabled_entities:
-        entities.append(Transit511CountSensor(coordinator, entry))
+    # Create sensors for each stop/device in this entry
+    for device_id, coordinator in entry_data.items():
+        _LOGGER.info("Creating sensors for device: %s", device_id)
+        # Create sensors based on enabled entities
+        if ENTITY_TYPE_COUNT in enabled_entities:
+            entities.append(Transit511CountSensor(coordinator, entry))
 
-    if ENTITY_TYPE_API_TIMESTAMP in enabled_entities:
-        entities.append(Transit511ApiTimestampSensor(coordinator, entry))
+        if ENTITY_TYPE_API_TIMESTAMP in enabled_entities:
+            entities.append(Transit511ApiTimestampSensor(coordinator, entry))
 
-    if ENTITY_TYPE_NEXT_ARRIVAL_MIN in enabled_entities:
-        entities.append(Transit511NextArrivalMinSensor(coordinator, entry))
+        if ENTITY_TYPE_NEXT_ARRIVAL_MIN in enabled_entities:
+            entities.append(Transit511NextArrivalMinSensor(coordinator, entry))
 
-    if ENTITY_TYPE_NEXT_ARRIVAL_TIME in enabled_entities:
-        entities.append(Transit511NextArrivalTimeSensor(coordinator, entry))
+        if ENTITY_TYPE_NEXT_ARRIVAL_TIME in enabled_entities:
+            entities.append(Transit511NextArrivalTimeSensor(coordinator, entry))
 
-    if ENTITY_TYPE_NEXT_VEHICLE in enabled_entities:
-        entities.append(Transit511NextVehicleSensor(coordinator, entry))
+        if ENTITY_TYPE_NEXT_VEHICLE in enabled_entities:
+            entities.append(Transit511NextVehicleSensor(coordinator, entry))
 
-    if ENTITY_TYPE_NEXT_DESTINATION in enabled_entities:
-        entities.append(Transit511NextDestinationSensor(coordinator, entry))
+        if ENTITY_TYPE_NEXT_DESTINATION in enabled_entities:
+            entities.append(Transit511NextDestinationSensor(coordinator, entry))
 
-    if ENTITY_TYPE_NEXT_OCCUPANCY in enabled_entities:
-        entities.append(Transit511NextOccupancySensor(coordinator, entry))
+        if ENTITY_TYPE_NEXT_OCCUPANCY in enabled_entities:
+            entities.append(Transit511NextOccupancySensor(coordinator, entry))
 
-    if ENTITY_TYPE_NEXT_THREE in enabled_entities:
-        entities.append(Transit511NextThreeSensor(coordinator, entry))
+        if ENTITY_TYPE_NEXT_THREE in enabled_entities:
+            entities.append(Transit511NextThreeSensor(coordinator, entry))
 
-    if ENTITY_TYPE_API_OK in enabled_entities:
-        entities.append(Transit511ApiOkSensor(coordinator, entry))
+        if ENTITY_TYPE_API_OK in enabled_entities:
+            entities.append(Transit511ApiOkSensor(coordinator, entry))
 
-    # Direction-filtered entities (IB)
-    if ENTITY_TYPE_IB_COUNT in enabled_entities:
-        entities.append(Transit511DirectionCountSensor(coordinator, entry, DIRECTION_INBOUND))
+        # Direction-filtered entities (IB)
+        if ENTITY_TYPE_IB_COUNT in enabled_entities:
+            entities.append(Transit511DirectionCountSensor(coordinator, entry, DIRECTION_INBOUND))
 
-    if ENTITY_TYPE_IB_NEXT_ARRIVAL_MIN in enabled_entities:
-        entities.append(Transit511DirectionNextArrivalMinSensor(coordinator, entry, DIRECTION_INBOUND))
+        if ENTITY_TYPE_IB_NEXT_ARRIVAL_MIN in enabled_entities:
+            entities.append(Transit511DirectionNextArrivalMinSensor(coordinator, entry, DIRECTION_INBOUND))
 
-    if ENTITY_TYPE_IB_NEXT_ARRIVAL_TIME in enabled_entities:
-        entities.append(Transit511DirectionNextArrivalTimeSensor(coordinator, entry, DIRECTION_INBOUND))
+        if ENTITY_TYPE_IB_NEXT_ARRIVAL_TIME in enabled_entities:
+            entities.append(Transit511DirectionNextArrivalTimeSensor(coordinator, entry, DIRECTION_INBOUND))
 
-    if ENTITY_TYPE_IB_NEXT_VEHICLE in enabled_entities:
-        entities.append(Transit511DirectionNextVehicleSensor(coordinator, entry, DIRECTION_INBOUND))
+        if ENTITY_TYPE_IB_NEXT_VEHICLE in enabled_entities:
+            entities.append(Transit511DirectionNextVehicleSensor(coordinator, entry, DIRECTION_INBOUND))
 
-    if ENTITY_TYPE_IB_NEXT_THREE in enabled_entities:
-        entities.append(Transit511DirectionNextThreeSensor(coordinator, entry, DIRECTION_INBOUND))
+        if ENTITY_TYPE_IB_NEXT_THREE in enabled_entities:
+            entities.append(Transit511DirectionNextThreeSensor(coordinator, entry, DIRECTION_INBOUND))
 
-    # Direction-filtered entities (OB)
-    if ENTITY_TYPE_OB_COUNT in enabled_entities:
-        entities.append(Transit511DirectionCountSensor(coordinator, entry, DIRECTION_OUTBOUND))
+        # Direction-filtered entities (OB)
+        if ENTITY_TYPE_OB_COUNT in enabled_entities:
+            entities.append(Transit511DirectionCountSensor(coordinator, entry, DIRECTION_OUTBOUND))
 
-    if ENTITY_TYPE_OB_NEXT_ARRIVAL_MIN in enabled_entities:
-        entities.append(Transit511DirectionNextArrivalMinSensor(coordinator, entry, DIRECTION_OUTBOUND))
+        if ENTITY_TYPE_OB_NEXT_ARRIVAL_MIN in enabled_entities:
+            entities.append(Transit511DirectionNextArrivalMinSensor(coordinator, entry, DIRECTION_OUTBOUND))
 
-    if ENTITY_TYPE_OB_NEXT_ARRIVAL_TIME in enabled_entities:
-        entities.append(Transit511DirectionNextArrivalTimeSensor(coordinator, entry, DIRECTION_OUTBOUND))
+        if ENTITY_TYPE_OB_NEXT_ARRIVAL_TIME in enabled_entities:
+            entities.append(Transit511DirectionNextArrivalTimeSensor(coordinator, entry, DIRECTION_OUTBOUND))
 
-    if ENTITY_TYPE_OB_NEXT_VEHICLE in enabled_entities:
-        entities.append(Transit511DirectionNextVehicleSensor(coordinator, entry, DIRECTION_OUTBOUND))
+        if ENTITY_TYPE_OB_NEXT_VEHICLE in enabled_entities:
+            entities.append(Transit511DirectionNextVehicleSensor(coordinator, entry, DIRECTION_OUTBOUND))
 
-    if ENTITY_TYPE_OB_NEXT_THREE in enabled_entities:
-        entities.append(Transit511DirectionNextThreeSensor(coordinator, entry, DIRECTION_OUTBOUND))
+        if ENTITY_TYPE_OB_NEXT_THREE in enabled_entities:
+            entities.append(Transit511DirectionNextThreeSensor(coordinator, entry, DIRECTION_OUTBOUND))
 
+    _LOGGER.info("Adding %d sensor entities", len(entities))
     async_add_entities(entities)
 
 
@@ -159,10 +170,11 @@ class Transit511BaseSensor(CoordinatorEntity, SensorEntity):
         """Initialize the sensor."""
         super().__init__(coordinator)
 
-        self._operator = entry.data[CONF_OPERATOR]
-        self._stop_code = entry.data[CONF_STOP_CODE]
-        self._line_id = entry.data.get(CONF_LINE_ID)
-        self._stop_name = entry.data.get("stop_name", self._stop_code)
+        # Get data from coordinator (v2.0 architecture)
+        self._operator = coordinator.operator
+        self._stop_code = coordinator.stop_code
+        self._line_id = coordinator.line_id
+        self._stop_name = self._stop_code  # Will be updated from API data
         self._operator_name = entry.data.get("operator_name", self._operator)
         self._entity_type = entity_type
         self._entry = entry
@@ -245,7 +257,7 @@ class Transit511BaseSensor(CoordinatorEntity, SensorEntity):
             ATTR_STOP_NAME: self._stop_name,
             ATTR_LINE: line_ref or self._line_id,  # Use API data or fallback to config
             ATTR_LINE_NAME: line_name,
-            ATTR_LAST_UPDATED: self.coordinator.data.get("response_timestamp"),
+            ATTR_LAST_UPDATED: self.coordinator.data.get("response_timestamp") if self.coordinator.data else None,
         }
 
         # Add directions if present (e.g., "IB, OB" or just "IB")
@@ -261,6 +273,9 @@ class Transit511BaseSensor(CoordinatorEntity, SensorEntity):
 
     def _get_visits(self, direction: str | None = None) -> list[dict[str, Any]]:
         """Get visits, optionally filtered by direction."""
+        if not self.coordinator.data:
+            return []
+
         visits = self.coordinator.data.get("visits", [])
 
         if direction:
@@ -344,6 +359,8 @@ class Transit511ApiTimestampSensor(Transit511BaseSensor):
     @property
     def native_value(self) -> datetime | None:
         """Return the state of the sensor."""
+        if not self.coordinator.data:
+            return None
         timestamp = self.coordinator.data.get("response_timestamp")
         if timestamp:
             try:
@@ -487,10 +504,11 @@ class Transit511ApiOkSensor(CoordinatorEntity, BinarySensorEntity):
         """Initialize the sensor."""
         super().__init__(coordinator)
 
-        self._operator = entry.data[CONF_OPERATOR]
-        self._stop_code = entry.data[CONF_STOP_CODE]
-        self._line_id = entry.data.get(CONF_LINE_ID)
-        self._stop_name = entry.data.get("stop_name", self._stop_code)
+        # Get data from coordinator (v2.0 architecture)
+        self._operator = coordinator.operator
+        self._stop_code = coordinator.stop_code
+        self._line_id = coordinator.line_id
+        self._stop_name = self._stop_code  # Will be updated from API data
         self._entry = entry
 
         line_part = f"_{self._line_id}" if self._line_id else ""
@@ -507,7 +525,9 @@ class Transit511ApiOkSensor(CoordinatorEntity, BinarySensorEntity):
     def name(self) -> str:
         """Return the name of the sensor."""
         # Build name: [stop_name] [directions] | API OK
-        visits = self.coordinator.data.get("visits", [])
+        visits = []
+        if self.coordinator.data:
+            visits = self.coordinator.data.get("visits", [])
 
         # Get stop name and directions from API
         stop_name = self._stop_name
@@ -540,6 +560,8 @@ class Transit511ApiOkSensor(CoordinatorEntity, BinarySensorEntity):
     @property
     def is_on(self) -> bool:
         """Return true if API is responding."""
+        if not self.coordinator.data:
+            return self.coordinator.last_update_success
         return len(self.coordinator.data.get("visits", [])) > 0 or self.coordinator.last_update_success
 
 
