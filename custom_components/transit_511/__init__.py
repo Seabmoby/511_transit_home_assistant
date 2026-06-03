@@ -15,10 +15,13 @@ from .api import Transit511ApiClient, Transit511ApiError
 from .const import (
     CONF_API_KEY,
     CONF_ENABLE_API_LOGGING,
+    CONF_LINE_ID,
     CONF_MONITORING_TYPE,
     CONF_OPERATOR,
     CONF_STARTUP_DELAY,
+    CONF_STOP_CODE,
     CONF_STOPS,
+    CONF_VEHICLE_ID,
     CONF_VEHICLES,
     DEFAULT_SCAN_INTERVAL,
     DEFAULT_STARTUP_DELAY,
@@ -34,6 +37,59 @@ PLATFORMS: list[Platform] = [Platform.SENSOR, Platform.DEVICE_TRACKER]
 
 # Global storage key for shared coordinators
 GLOBAL_COORDINATORS = "global_coordinators"
+
+
+async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    """Migrate an old config entry to the current schema.
+
+    v1 stored a single monitored item using top-level keys
+    (stop_code/line_id or vehicle_id). v2 stores items as lists under
+    CONF_STOPS / CONF_VEHICLES so a single entry can hold many.
+    """
+    _LOGGER.debug("Migrating config entry %s from version %s", entry.title, entry.version)
+
+    # Refuse to downgrade entries written by a newer version.
+    if entry.version > 2:
+        _LOGGER.error(
+            "Cannot downgrade config entry %s from version %s", entry.title, entry.version
+        )
+        return False
+
+    if entry.version == 1:
+        new_data = dict(entry.data)
+
+        # Determine the monitoring type; fall back to which top-level key is present.
+        monitoring_type = new_data.get(CONF_MONITORING_TYPE)
+        if monitoring_type is None:
+            monitoring_type = (
+                MONITORING_TYPE_STOP
+                if CONF_STOP_CODE in new_data
+                else MONITORING_TYPE_VEHICLE
+            )
+            new_data[CONF_MONITORING_TYPE] = monitoring_type
+
+        if monitoring_type == MONITORING_TYPE_STOP:
+            stop_code = new_data.pop(CONF_STOP_CODE, None)
+            line_id = new_data.pop(CONF_LINE_ID, None)
+            stop_name = new_data.pop("stop_name", stop_code)
+            new_data[CONF_STOPS] = [
+                {
+                    "stop_code": stop_code,
+                    # v2 flow writes line_id as a string; coerce None -> "".
+                    "line_id": line_id or "",
+                    "stop_name": stop_name if stop_name is not None else stop_code,
+                }
+            ]
+        else:
+            vehicle_id = new_data.pop(CONF_VEHICLE_ID, None)
+            new_data[CONF_VEHICLES] = [{"vehicle_id": vehicle_id}]
+
+        hass.config_entries.async_update_entry(entry, data=new_data, version=2)
+        _LOGGER.info(
+            "Migrated config entry %s to version 2 (%s)", entry.title, monitoring_type
+        )
+
+    return True
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
@@ -226,8 +282,20 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 stop_code = stop_config["stop_code"]
                 global_coord_key = f"{operator}_{stop_code}"
 
-                # Remove this stop's global coordinator
-                if global_coord_key in global_coordinators:
+                # Only remove the shared global coordinator if no other config
+                # entry still monitors the same (operator, stop_code). Otherwise
+                # we'd strand a sibling entry that depends on this coordinator.
+                other_uses_stop = any(
+                    e.entry_id != entry.entry_id
+                    and e.data.get(CONF_OPERATOR) == operator
+                    and any(
+                        s["stop_code"] == stop_code
+                        for s in e.data.get(CONF_STOPS, [])
+                    )
+                    for e in hass.config_entries.async_entries(DOMAIN)
+                )
+
+                if not other_uses_stop and global_coord_key in global_coordinators:
                     _LOGGER.debug(
                         "Removing GlobalStopCoordinator for %s stop %s during unload",
                         operator,
@@ -270,7 +338,9 @@ class GlobalStopCoordinator(DataUpdateCoordinator):
             hass,
             _LOGGER,
             name=f"{DOMAIN}_global_{operator}_{stop_code}",
-            update_interval=timedelta(seconds=scan_interval),
+            # Start with the startup delay to avoid a rate-limit burst on load;
+            # switched to scan_interval after the first successful fetch.
+            update_interval=timedelta(seconds=startup_delay),
         )
 
     async def _async_update_data(self):
@@ -287,30 +357,20 @@ class GlobalStopCoordinator(DataUpdateCoordinator):
                 self.stop_code
             )
 
-        # After first update, wait startup_delay seconds before starting regular schedule
-        # This prevents rate limiting while giving immediate feedback on startup
-        if self._first_update_done:
-            # Check if we need to adjust the interval back to user preference
-            if self.update_interval == timedelta(seconds=self.startup_delay):
-                _LOGGER.debug(
-                    "Switching from initial %ss delay to user's %ss interval for %s stop %s",
-                    self.startup_delay,
-                    self.scan_interval,
-                    self.operator,
-                    self.stop_code,
-                )
-                self.update_interval = timedelta(seconds=self.scan_interval)
-        else:
-            # First update - set next update to startup_delay seconds from now
+        # The coordinator starts on the startup_delay interval (set in __init__)
+        # so the second fetch is spaced out from the initial startup burst. The
+        # flag flips on the immediate first fetch; the one-time switch back to the
+        # user's scan_interval then happens on the next (delayed) fetch.
+        if not self._first_update_done:
+            self._first_update_done = True
+        elif self.update_interval == timedelta(seconds=self.startup_delay):
             _LOGGER.debug(
-                "First update for %s stop %s - next update in %ss (then every %ss)",
+                "Resuming %ss interval for %s stop %s after startup delay",
+                self.scan_interval,
                 self.operator,
                 self.stop_code,
-                self.startup_delay,
-                self.scan_interval,
             )
-            self._first_update_done = True
-            self.update_interval = timedelta(seconds=self.startup_delay)
+            self.update_interval = timedelta(seconds=self.scan_interval)
 
         try:
             data = await self.client.get_stop_monitoring(self.operator, self.stop_code)
@@ -358,7 +418,7 @@ class StopDeviceCoordinator(DataUpdateCoordinator):
             hass,
             _LOGGER,
             name=f"{DOMAIN}_{operator}_{stop_code}_{line_id or 'all'}",
-            update_interval=timedelta(seconds=9999999),  # Never auto-update
+            update_interval=None,  # Listener-driven only; never auto-polls
         )
 
         # Listen to global coordinator (not to self, to avoid infinite recursion)
@@ -481,7 +541,9 @@ class Transit511VehicleCoordinator(DataUpdateCoordinator):
             hass,
             _LOGGER,
             name=f"{DOMAIN}_{operator}_vehicle_{vehicle_id}",
-            update_interval=timedelta(seconds=scan_interval),
+            # Start with the startup delay to avoid a rate-limit burst on load;
+            # switched to scan_interval after the first successful fetch.
+            update_interval=timedelta(seconds=startup_delay),
         )
 
     async def _async_update_data(self):
@@ -493,30 +555,20 @@ class Transit511VehicleCoordinator(DataUpdateCoordinator):
                 self.vehicle_id
             )
 
-        # After first update, wait startup_delay seconds before starting regular schedule
-        # This prevents rate limiting while giving immediate feedback on startup
-        if self._first_update_done:
-            # Check if we need to adjust the interval back to user preference
-            if self.update_interval == timedelta(seconds=self.startup_delay):
-                _LOGGER.debug(
-                    "Switching from initial %ss delay to user's %ss interval for %s vehicle %s",
-                    self.startup_delay,
-                    self.scan_interval,
-                    self.operator,
-                    self.vehicle_id,
-                )
-                self.update_interval = timedelta(seconds=self.scan_interval)
-        else:
-            # First update - set next update to startup_delay seconds from now
+        # The coordinator starts on the startup_delay interval (set in __init__)
+        # so the second fetch is spaced out from the initial startup burst. The
+        # flag flips on the immediate first fetch; the one-time switch back to the
+        # user's scan_interval then happens on the next (delayed) fetch.
+        if not self._first_update_done:
+            self._first_update_done = True
+        elif self.update_interval == timedelta(seconds=self.startup_delay):
             _LOGGER.debug(
-                "First update for %s vehicle %s - next update in %ss (then every %ss)",
+                "Resuming %ss interval for %s vehicle %s after startup delay",
+                self.scan_interval,
                 self.operator,
                 self.vehicle_id,
-                self.startup_delay,
-                self.scan_interval,
             )
-            self._first_update_done = True
-            self.update_interval = timedelta(seconds=self.startup_delay)
+            self.update_interval = timedelta(seconds=self.scan_interval)
 
         try:
             data = await self.client.get_vehicle_monitoring(

@@ -213,15 +213,16 @@ class Transit511ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         config_entry: config_entries.ConfigEntry,
     ) -> config_entries.OptionsFlow:
         """Create the options flow."""
-        return Transit511OptionsFlowHandler(config_entry)
+        return Transit511OptionsFlowHandler()
 
 
 class Transit511OptionsFlowHandler(config_entries.OptionsFlow):
     """Handle options flow for 511 Transit."""
 
-    def __init__(self, config_entry: config_entries.ConfigEntry) -> None:
+    def __init__(self) -> None:
         """Initialize options flow."""
-        self.config_entry = config_entry
+        # Note: self.config_entry is provided automatically by OptionsFlow
+        # (read-only property in HA 2024.11+); do not assign it here.
         self._client: Transit511ApiClient | None = None
         self._new_stop_data: dict[str, Any] = {}
         self._new_vehicle_data: dict[str, Any] = {}
